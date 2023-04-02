@@ -81,23 +81,8 @@ async function loadTheme(data) {
                     });
                 } else if (type == "element") {
                     runForOptionalArray(name, (n) => {
-                        // var elements = document.querySelectorAll(n);
                         var css = config.css;
                         if (css && !Array.isArray(css)) return;
-    
-                        // for (var k = 0; k < elements.length; k++) {
-                        //     var element = elements[k];
-
-                        //     if (css)
-                        //         for (var l = 0; l < css.length; l++)
-                        //             // element.style.setProperty(css[l], "var(--eduplex-" + key + ")");
-                        //             document.documentElement.style.setProperty(css[l], "var(--eduplex-" + key + ") !important");
-
-                        //     if (config.custom_css)
-                        //         for (var cssKey in config.custom_css)
-                        //             // element.style.setProperty(cssKey, config.custom_css[cssKey]);
-                        //             document.documentElement.style.setProperty(cssKey, config.custom_css[cssKey]);
-                        // }
 
                         if (css)
                             for (var l = 0; l < css.length; l++) {
@@ -133,3 +118,35 @@ function runForOptionalArray(array, func) {
         func(array);
     }
 }
+
+socket.emit('list', 'themes', (res) => {
+    if (!res.success) return;
+
+    const themes = res.data;
+    var dropdown = $("<select></select>");
+    for (var i = 0; i < themes.length; i++) {
+        var theme = themes[i].replace(".json", "");
+        var option = $("<option></option>");
+        option.text(theme[0].toUpperCase() + theme.substring(1));
+        option.val(theme);
+        dropdown.append(option);
+    }
+
+    dropdown.css("position", "absolute");
+    dropdown.css("top", "0");
+    dropdown.css("right", "0");
+    dropdown.css("z-index", "999");
+    dropdown.css("background", "white");
+    dropdown.css("padding", "5px");
+    dropdown.css("border", "1px solid black");
+    dropdown.css("border-radius", "5px");
+    dropdown.css("font-size", "16px");
+    dropdown.css("font-family", "sans-serif");
+    dropdown.css("cursor", "pointer");
+
+    dropdown.change(() => {
+        fetchAndLoadServerTheme(dropdown.val());
+    });
+
+    $("body").append(dropdown);
+});
