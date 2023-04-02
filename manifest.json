@@ -1,0 +1,17 @@
+{
+    "$schema": "http://json.schemastore.org/chrome-manifest",
+    "manifest_version": 3,
+    "name": "EduPlex",
+    "version": "0.0.1",
+    "description": "Catalyze your education with EduPlex - a collection of incredible tools to improve your learning online.",
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ]
+}
