@@ -72,7 +72,8 @@ async function loadTheme(data) {
                 var type = config.type;
                 var name = config.name;
                 var value = data[key];
-                if (!type || !name) continue;
+                if (!type || !name) return;
+
                 document.documentElement.style.setProperty("--eduplex-" + key, value);
     
                 if (type == "variable") {
@@ -82,18 +83,23 @@ async function loadTheme(data) {
                 } else if (type == "element") {
                     runForOptionalArray(name, (n) => {
                         var css = config.css;
-                        if (css && !Array.isArray(css)) return;
 
                         if (css)
-                            for (var l = 0; l < css.length; l++) {
-                                var cssKey = n + " {" + css[l] + ": " + "var(--eduplex-" + key + ") !important; }";
+                            runForOptionalArray(css, (c) => {
+                                var cssKey = n + " {" + c + ": " + "var(--eduplex-" + key + ") !important; }";
                                 var cssElement = document.createElement("style");
                                 cssElement.innerHTML = cssKey;
-                                console.log(cssKey);
                                 document.head.appendChild(cssElement);
-                            }
+                                if (config.hard_override === true) {
+                                    var elements = document.querySelectorAll(n);
+                                    for (var i = 0; i < elements.length; i++) {
+                                        elements[i].style.setProperty(c, value + " !important");
+                                        console.log(elements[i], c, value)
+                                    }
+                                }
+                            });
 
-                        if (config.custom_css)
+                        if (config.custom_css && Array.isArray(config.custom_css))
                             for (var cssKey in config.custom_css) {
                                 var cssElement = document.createElement("style");
                                 cssElement.innerHTML = n + " {" + cssKey + ": " + config.custom_css[cssKey] + " !important; }";
@@ -106,7 +112,7 @@ async function loadTheme(data) {
     }
 }
 
-fetchAndLoadServerTheme('main');
+fetchAndLoadServerTheme('mellow');
 
 function runForOptionalArray(array, func) {
     if (!array || (!Array.isArray(array) && typeof array !== "string")) return;
