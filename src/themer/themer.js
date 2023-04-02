@@ -39,7 +39,6 @@ async function loadTheme(data) {
     });
 
     pageConfig = JSON.parse(pageConfig);
-    console.log(pageConfig, data);
 
     if (pageConfig.css) {
         var css = document.createElement("style");
@@ -66,12 +65,7 @@ async function loadTheme(data) {
     if (pageConfig.bindings) {
         for (var key in data) {
             var configKey = pageConfig.bindings[key];
-            if (!configKey || !Array.isArray(configKey)) {
-                console.log("No config for key:", key);
-                continue;
-            } else {
-                console.log("Config for key:", key, "=", configKey);
-            }
+            if (!configKey || !Array.isArray(configKey)) continue;
     
             for (var i = 0; i < configKey.length; i++) {
                 var config = configKey[i];
@@ -82,71 +76,45 @@ async function loadTheme(data) {
                 document.documentElement.style.setProperty("--eduplex-" + key, value);
     
                 if (type == "variable") {
-                    if (Array.isArray(name)) {
-                        for (var j = 0; j < name.length; j++) {
-                            var elements = document.querySelectorAll("[style*='var(--" + name[j] + ")']");
-                            for (var k = 0; k < elements.length; k++) {
-                                var element = elements[k];
-                                var style = element.style;
-                                var newStyle = style.cssText.replace("var(--" + name[j] + ")", "var(--eduplex-" + key + ")");
-                                element.style = newStyle;
-                            }
-                        }
-                    } else {
-                        var elements = document.querySelectorAll("[style*='var(--" + name + ")']");
-                        for (var j = 0; j < elements.length; j++) {
-                            var element = elements[j];
-                            var style = element.style;
-                            var newStyle = style.cssText.replace("var(--" + name + ")", "var(--eduplex-" + key + ")");
-                            element.style = newStyle;
-                        }
-                    }
+                    runForOptionalArray(name, (n) => {
+                        document.documentElement.style.setProperty(n, "var(--eduplex-" + key + ")");
+                    });
                 } else if (type == "element") {
-                    if (Array.isArray(name)) {
-                        for (var j = 0; j < name.length; j++) {
-                            var elements = document.querySelectorAll(name[j]);
-                            var css = config.css;
-                            if (css && !Array.isArray(css)) continue;
-        
-                            for (var k = 0; k < elements.length; k++) {
-                                var element = elements[k];
-    
-                                if (css) {
-                                    for (var l = 0; l < css.length; l++) {
-                                        element.style.setProperty(css[l], "var(--eduplex-" + key + ")");
-                                    }
-                                }
-    
-                                if (config.custom_css) {
-                                    for (var customKey in config.custom_css) {
-                                        var customValue = config.custom_css[customKey];
-                                        element.style.setProperty(customKey, customValue);
-                                        console.log(customKey, customValue);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        var elements = document.querySelectorAll(name);
+                    runForOptionalArray(name, (n) => {
+                        // var elements = document.querySelectorAll(n);
                         var css = config.css;
-                        if (css && !Array.isArray(css)) continue;
-        
-                        for (var j = 0; j < elements.length; j++) {
-                            var element = elements[j];
-                            if (css) {
-                                for (var k = 0; k < css.length; k++) {
-                                    element.style.setProperty(css[k], "var(--eduplex-" + key + ")");
-                                }
-                            }
+                        if (css && !Array.isArray(css)) return;
     
-                            if (config.custom_css) {
-                                for (var customKey in config.custom_css) {
-                                    var customValue = config.custom_css[customKey];
-                                    element.style.setProperty(customKey, customValue);
-                                }
+                        // for (var k = 0; k < elements.length; k++) {
+                        //     var element = elements[k];
+
+                        //     if (css)
+                        //         for (var l = 0; l < css.length; l++)
+                        //             // element.style.setProperty(css[l], "var(--eduplex-" + key + ")");
+                        //             document.documentElement.style.setProperty(css[l], "var(--eduplex-" + key + ") !important");
+
+                        //     if (config.custom_css)
+                        //         for (var cssKey in config.custom_css)
+                        //             // element.style.setProperty(cssKey, config.custom_css[cssKey]);
+                        //             document.documentElement.style.setProperty(cssKey, config.custom_css[cssKey]);
+                        // }
+
+                        if (css)
+                            for (var l = 0; l < css.length; l++) {
+                                var cssKey = n + " {" + css[l] + ": " + "var(--eduplex-" + key + ") !important; }";
+                                var cssElement = document.createElement("style");
+                                cssElement.innerHTML = cssKey;
+                                console.log(cssKey);
+                                document.head.appendChild(cssElement);
                             }
-                        }
-                    }
+
+                        if (config.custom_css)
+                            for (var cssKey in config.custom_css) {
+                                var cssElement = document.createElement("style");
+                                cssElement.innerHTML = n + " {" + cssKey + ": " + config.custom_css[cssKey] + " !important; }";
+                                document.head.appendChild(cssElement);
+                            }
+                    });
                 }
             }
         }
@@ -154,3 +122,14 @@ async function loadTheme(data) {
 }
 
 fetchAndLoadServerTheme('main');
+
+function runForOptionalArray(array, func) {
+    if (!array || (!Array.isArray(array) && typeof array !== "string")) return;
+    if (Array.isArray(array)) {
+        for (var i = 0; i < array.length; i++) {
+            func(array[i]);
+        }
+    } else {
+        func(array);
+    }
+}
